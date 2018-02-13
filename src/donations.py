@@ -15,7 +15,7 @@ dataset=dataset[['cmte_id','name','zip','date','amount','other_id']]
 # dataset['upper']=dataset['date_length']-1
 # dataset['year']= dataset['date'].str[dataset.lower:dataset.upper]
 #==============================================================================
-dataset
+
            
 #==============================================================================
 # #if dataset[dataset['zip'].str.len()==5 | dataset['other_id'] == 'NaN' | dataset['name']!='NaN' | dataset['amount']!='NaN' |  dataset['zip']!='NaN' | dataset['date']!='NaN']:
@@ -34,9 +34,64 @@ repeated_donors=newasc['name']
 asc['repeat_donor']= np.where(asc['name'].isin(repeated_donors), 'yes', 'no')
 
 
+dataset['repeat_donor']= np.where(dataset['name'].isin(repeated_donors), 'yes', 'no')
+
+#filtering individual donors 
+group_donor=dataset['other_id']
+group_donor=group_donor.dropna()
+
+dataset['individual']=np.where(dataset['other_id'].isin(group_donor)  , 'no', 'yes' )
+dataset=dataset[dataset.individual=='yes']
+#dataset=dataset.loc[dataset['other_id']=='']
+
+
+#filtering for null conditions 
+
+dataset=dataset[['cmte_id','name','zip','date','amount','repeat_donor']]
+dataset.dropna()
+
+#filtering for repeated donors 
+dataset=dataset[dataset.repeat_donor=='yes']
+
+yeard=dataset[dataset.date==2018]
+yeard2=dataset[dataset.date==2018]
+
+yeard2['running_total']=yeard2['amount']
+yeard2['running_percentile']=yeard2['amount']
+yeard2['total_cont']=1
+
+#cmp={'zip':[dataset['zip']],'date':[dataset['date']],'amount':[dataset['amount']]}
+#
+#twod_list=[dataset['cmte_id']]
+# twod_list.append(cmp)
+length=2
+arr=np.array(yeard['amount'])
+
+#        yeard['running_total']=yeard['amount']
+#        yeard['running_percentile']=yeard['amount']
+#        yeard['total_cont']=yeard['amount']
+##    yeard['total']=yeard.cumsum(axis:{index(0),columns(2)}) 
+#    else:
+percentile1=pd.read_csv(os.curdir +'/input/percentile.txt', names=['perc'], dtype={'perc':int})
+
+s=int(percentile1.iloc[:].values)
+
+
+for i in range(length):
+    if  i==1:
+        yeard['running_total']=arr.sum()
+        yeard['running_percentile']=np.round(np.percentile(arr,s,interpolation='nearest'))
+        yeard['total_cont']=len(arr)
 
 
 
+yeard=yeard[['cmte_id','zip','date','running_percentile','running_total','total_cont']]
 
+yeard2=yeard2[['cmte_id','zip','date','running_percentile','running_total','total_cont']]
+yeard=yeard[:-1]
+yeard2=yeard2[:-1]
 
+y=pd.concat([yeard2,yeard],axis=0)
+
+y.to_csv(os.curdir +'/output/repeat_donors.txt',header=False,index=False, sep='|')
 
